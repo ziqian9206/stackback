@@ -36,7 +36,7 @@ module.exports = appInfo => {
    * @see http://mongodb.github.io/node-mongodb-native/2.2/api/Db.html#createCollection
    */
   config.mongoose = {
-    url: 'mongodb://118.24.8.141:27017/stock-simulation' || 'mongodb://127.0.0.1:27017/stock-simulation', // process.env.MONGODB_URL
+    url: 'mongodb://127.0.0.1:27017/stock-simulation', // process.env.MONGODB_URL
     options: {
       server: { poolSize: 20 },
       reconnectTries: 10,
