@@ -54,6 +54,7 @@ module.exports = appInfo => {
       enable: false,
       // ignore: '/v1/*/*',
     },
+    domainWhiteList: [ '*' ],
   };
 
   return {
