@@ -15,6 +15,19 @@ const TransactionRules = {
   price: { type: 'number' },
 };
 
+const RecordRules = {
+  uid: MongoObjectIdSchema,
+  sid: { type: 'string' },
+  sname: { type: 'string' },
+  action: { type: 'number' }, // 交易的类型，买|卖
+  count: { type: 'number' }, // 成交的数量
+  price: { type: 'number' }, // 成交的单价
+  totalFund: { type: 'number' }, // 成交的总金额
+  earning: { type: 'number' }, // 盈亏金额
+  rate: { type: 'number' }, // 收益率
+  time: { type: 'number' }, //交易时间
+};
+
 const TransactionType = {
   sell: 0, // 卖出
   buy: 1, // 买入
@@ -78,6 +91,25 @@ class TransactionController extends Controller {
     // 判断买入交易是委托还是立刻执行
     const action = await ctx.service.transaction.action({ action: TransactionType.sell, uid, sid, count, price, success });
     ctx.helper.success({ ctx, res: action });
+  }
+
+  async record() {
+    const { ctx } = this;
+    const { body } = ctx.request;
+    ctx.validate(RecordRules, body);
+    const { uid, sid, sname, action, count, price, totalFund, earning, rate, time } = body;
+
+    const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, totalFund, earning, rate, time });
+    ctx.helper.success({ ctx, res: res });
+  }
+
+  async getUserTransaction() {
+    const { ctx } = this;
+    const uid = ctx.params.uid;
+    ctx.validate({ uid: MongoObjectIdSchema }, ctx.params);
+
+    const res = await ctx.service.transaction.getTransactionByUid({uid})
+    ctx.helper.success({ ctx, res: res });
   }
 }
 
