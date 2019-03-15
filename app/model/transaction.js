@@ -8,11 +8,15 @@ module.exports = app => {
 
   const TransactionSchema = new Schema({
     uid: { type: ObjectId },
-    action: { type: Number },
     sid: { type: String },
-    count: { type: Number },
-    price: { type: Number },
-    success: { type: Number },
+    sname: { type: String },
+    action: { type: Number }, // 交易的类型，买|卖
+    count: { type: Number }, // 成交的数量
+    price: { type: Number }, // 成交的单价
+    success: { type: Number }, // 交易类型 委托|成功交易
+    totalFund: { type: Number }, // 成交的总金额
+    earning: { type: Number }, // 盈亏金额
+    rate: { type: Number }, // 收益率
     time: { type: Number },
   });
 
