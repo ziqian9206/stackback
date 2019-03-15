@@ -27,4 +27,10 @@ module.exports = app => {
   // 股票卖出
   router.post('/v1/transaction/sell', controller.transaction.sell);
 
+  // 新增交易记录
+  router.post('/v1/transaction/record', controller.transaction.record);
+
+  // 获取交易记录
+  router.get('/v1/transaction/:uid', controller.transaction.getUserTransaction);
+
 };
