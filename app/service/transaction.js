@@ -4,19 +4,23 @@ const Service = require('egg').Service;
 
 class TransactionService extends Service {
 
-  action({ action, uid, sid, count, price, success, transactionTime }) {
+  action({ action, uid, sid, sname, count, price, success, totalFund, earning, mock, transactionTime }) {
     const transaction = new this.ctx.model.Transaction();
     transaction.uid = uid;
-    transaction.action = action;
     transaction.sid = sid;
+    transaction.sname = sname;
+    transaction.action = action;
     transaction.count = count;
     transaction.price = price;
-    transaction.time = transactionTime;
     transaction.success = success;
+    transaction.totalFund = totalFund;
+    transaction.earning = earning;
+    transaction.mock = mock;
+    transaction.time = transactionTime;
     return transaction.save();
   }
 
-  record({ uid, sid, sname, action, count, price, totalFund, earning, rate, time }) {
+  record({ uid, sid, sname, action, count, price, totalFund, earning, mock, time }) {
     const transaction = new this.ctx.model.Transaction();
     transaction.uid = uid;
     transaction.sid = sid;
@@ -27,7 +31,7 @@ class TransactionService extends Service {
     transaction.success = 1; // 模拟记录总是成功
     transaction.totalFund = totalFund;
     transaction.earning = earning;
-    transaction.rate = rate;
+    transaction.mock = mock;
     transaction.time = time;
     return transaction.save();
   }

@@ -15,8 +15,8 @@ module.exports = app => {
     price: { type: Number }, // 成交的单价
     success: { type: Number }, // 交易类型 委托|成功交易
     totalFund: { type: Number }, // 成交的总金额
-    earning: { type: Number }, // 盈亏金额
-    rate: { type: Number }, // 收益率
+    earning: { type: Number }, // 交易盈亏金额
+    mock: { type: Number },
     time: { type: Number },
   });
 

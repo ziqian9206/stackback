@@ -24,7 +24,7 @@ const RecordRules = {
   price: { type: 'number' }, // 成交的单价
   totalFund: { type: 'number' }, // 成交的总金额
   earning: { type: 'number' }, // 盈亏金额
-  rate: { type: 'number' }, // 收益率
+  // rate: { type: 'number' }, // 收益率
   time: { type: 'number' }, // 交易时间
 };
 
@@ -41,24 +41,43 @@ class TransactionController extends Controller {
     ctx.validate(TransactionRules, body);
 
     const { uid, sid, count, price } = body;
+    const userFund = await ctx.service.funds.getUserFund(uid);
+    const stockInfo = await ctx.service.stock.getStockInfo(sid);
+
     // TODO：首先判断要购买的股数是否超过了可购买的股数
 
-    // TODO：判断用户资金是否可以买入当前的数量
-
     // 用户当前的交易是委托还是直接完成 success： 0： 委托， 1: 完成
-    const stockInfo = await ctx.service.stock.getStockInfo(sid);
     const stockInfoGBK = iconv.decode(stockInfo.data, 'gbk').split(',');
     const symbol = stockInfoGBK[0].match(/(sh|sz)\d+/g)[0]; // 0: 股票代码
     const name = stockInfoGBK[0].match(/[\u4E00-\u9FA5]+/g)[0]; // 0: 股票名字
     const currentPrice = Number(stockInfoGBK[3]); // [3]当前价格
+
+
     // 如果当前股票的实时价格超过了用户的购价，则委托。等到股票实时价格下降到用户的出价则成交。
     // 否则立即成交
     const success = currentPrice > price ? 0 : 1;
+
+    const totalFund = price * count; // 成交总金额
+
+    const taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
+
+    const userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
+
+
+    // 判断用户资金是否可以买入当前的数量
+    if (userFundNow < 0) {
+      ctx.helper.error({ ctx, error: 110, msg: '资金不足，无法购买' });
+      return;
+    }
+
+    const earning = 0; // 交易盈亏金额：买入的时候为0。
+
     const transactionTime = Date.now();
-    const action = await ctx.service.transaction.action({ action: TransactionType.buy, uid, sid, count, price, success, transactionTime });
+
+    // 存储交易记录
+    const action = await ctx.service.transaction.action({ uid, sid, sname: name, action: TransactionType.buy, count, price, success, totalFund, earning, mock: 0, transactionTime });
 
     // 委托和成交，都要改变用户当前的资金。
-    const userFund = await ctx.service.funds.getUserFund(uid);
     const currentValue = userFund.currentValue - price * count; // 按买入价格计算资金
     await ctx.service.funds.changeUserFund(uid, currentValue);
 
@@ -97,9 +116,10 @@ class TransactionController extends Controller {
     const { ctx } = this;
     const { body } = ctx.request;
     ctx.validate(RecordRules, body);
-    const { uid, sid, sname, action, count, price, totalFund, earning, rate, time } = body;
+    const { uid, sid, sname, action, count, price, totalFund, earning, time } = body;
 
-    const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, totalFund, earning, rate, time });
+    const mock = 1;
+    const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, success: 1, totalFund, earning, mock, time });
     ctx.helper.success({ ctx, res });
   }
 
