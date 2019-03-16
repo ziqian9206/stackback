@@ -25,7 +25,7 @@ const RecordRules = {
   totalFund: { type: 'number' }, // 成交的总金额
   earning: { type: 'number' }, // 盈亏金额
   rate: { type: 'number' }, // 收益率
-  time: { type: 'number' }, //交易时间
+  time: { type: 'number' }, // 交易时间
 };
 
 const TransactionType = {
@@ -100,7 +100,7 @@ class TransactionController extends Controller {
     const { uid, sid, sname, action, count, price, totalFund, earning, rate, time } = body;
 
     const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, totalFund, earning, rate, time });
-    ctx.helper.success({ ctx, res: res });
+    ctx.helper.success({ ctx, res });
   }
 
   async getUserTransaction() {
@@ -108,8 +108,8 @@ class TransactionController extends Controller {
     const uid = ctx.params.uid;
     ctx.validate({ uid: MongoObjectIdSchema }, ctx.params);
 
-    const res = await ctx.service.transaction.getTransactionByUid({uid})
-    ctx.helper.success({ ctx, res: res });
+    const res = await ctx.service.transaction.getTransactionByUid({ uid });
+    ctx.helper.success({ ctx, res });
   }
 }
 

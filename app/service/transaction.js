@@ -32,7 +32,7 @@ class TransactionService extends Service {
     return transaction.save();
   }
 
-  getTransactionByUid({uid}) {
+  getTransactionByUid({ uid }) {
     return this.ctx.model.Transaction.find({ uid });
   }
 }
