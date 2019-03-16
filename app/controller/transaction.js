@@ -78,8 +78,7 @@ class TransactionController extends Controller {
     const action = await ctx.service.transaction.action({ uid, sid, sname: name, action: TransactionType.buy, count, price, success, totalFund, earning, mock: 0, transactionTime });
 
     // 委托和成交，都要改变用户当前的资金。
-    const currentValue = userFund.currentValue - price * count; // 按买入价格计算资金
-    await ctx.service.funds.changeUserFund(uid, currentValue);
+    await ctx.service.funds.changeUserFund(uid, userFundNow);
 
     // 成交还需要改变用户所持股票
     if (success) {
