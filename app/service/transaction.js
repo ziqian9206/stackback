@@ -36,8 +36,16 @@ class TransactionService extends Service {
     return transaction.save();
   }
 
-  getTransactionByUid({ uid }) {
-    return this.ctx.model.Transaction.find({ uid });
+  getTransactionByUid(params) {
+    return this.ctx.model.Transaction.find({ uid: params.uid, success: 1, time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() } });
+  }
+
+  getUserHoldByUid({ uid }) {
+    return this.ctx.model.Transaction.find({ uid, success: 1, action: 1 });
+  }
+
+  getUserCommissionByUid(params) {
+    return this.ctx.model.Transaction.find({ uid: params.uid, success: 0, time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() } });
   }
 }
 
