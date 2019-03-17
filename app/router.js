@@ -21,6 +21,12 @@ module.exports = app => {
   // 股票实时信息
   router.get('/v1/stock/:sid', controller.stock.info);
 
+  // 当前持仓
+  router.get('/v1/stock/hold/:uid', controller.stock.hold);
+
+  // 当前委托
+  router.get('/v1/stock/commission/:uid', controller.stock.commission);
+
   // 股票买入
   router.post('/v1/transaction/buy', controller.transaction.buy);
 
