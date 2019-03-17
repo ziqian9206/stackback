@@ -8,9 +8,10 @@ module.exports = app => {
 
   const StockSchema = new Schema({
     uid: { type: ObjectId },
-    symbol: { type: String },
+    sid: { type: String },
     name: { type: String },
-    held: { type: Number },
+    hold: { type: Number },
+    earning: { type: Number },
     transactionTime: { type: Number },
   });
 
