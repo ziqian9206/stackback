@@ -13,6 +13,7 @@ const TransactionRules = {
   sid: { type: 'string' },
   count: { type: 'number' },
   price: { type: 'number' },
+  type: { type: 'number' },
 };
 
 const RecordRules = {
@@ -40,50 +41,86 @@ class TransactionController extends Controller {
     const { body } = ctx.request;
     ctx.validate(TransactionRules, body);
 
-    const { uid, sid, count, price } = body;
+    const { uid, sid, count, price, type } = body;
     const userFund = await ctx.service.funds.getUserFund(uid);
     const stockInfo = await ctx.service.stock.getStockInfo(sid);
-
+    const userStockInfo = await ctx.service.stock.getUserStockById({ uid, sid });
+    console.log('userStockInfo:', userStockInfo);
     // TODO：首先判断要购买的股数是否超过了可购买的股数
 
-    // 用户当前的交易是委托还是直接完成 success： 0： 委托， 1: 完成
     const stockInfoGBK = iconv.decode(stockInfo.data, 'gbk').split(',');
     const symbol = stockInfoGBK[0].match(/(sh|sz)\d+/g)[0]; // 0: 股票代码
     const name = stockInfoGBK[0].match(/[\u4E00-\u9FA5]+/g)[0]; // 0: 股票名字
     const currentPrice = Number(stockInfoGBK[3]); // [3]当前价格
 
-
+    // 用户当前的交易是委托还是直接完成 success： 0： 委托， 1: 完成
     // 如果当前股票的实时价格超过了用户的购价，则委托。等到股票实时价格下降到用户的出价则成交。
     // 否则立即成交
-    const success = currentPrice > price ? 0 : 1;
 
+    let success = null;
+    let taxes = null;
+    let userFundNow = null;
     const totalFund = price * count; // 成交总金额
-
-    const taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
-
-    const userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
-
-
-    // 判断用户资金是否可以买入当前的数量
-    if (userFundNow < 0) {
-      ctx.helper.error({ ctx, error: 110, msg: '资金不足，无法购买' });
-      return;
-    }
-
-    const earning = 0; // 交易盈亏金额：买入的时候为0。
-
+    let earning = 0;
     const transactionTime = Date.now();
+
+    if (type === 1) {
+      success = currentPrice > price ? 0 : 1;
+      taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
+      userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
+
+      // 判断用户资金是否可以买入当前的数量
+      if (userFundNow < 0) {
+        ctx.helper.error({ ctx, error: 110, msg: '资金不足，无法购买' });
+        return;
+      }
+
+      earning = 0 - price * count - taxes;
+
+      // 成交还需要改变用户所持股票
+      if (success && userStockInfo.length === 0) {
+        await ctx.service.stock.changeUserStocks({ type, uid, symbol, name, hold: count, earning, transactionTime });
+      } else if (success && userStockInfo.length > 0) {
+
+        const hold = userStockInfo[0].hold + count;
+        earning = userStockInfo[0].earning + earning;
+
+        console.log('updateUserStock=>', uid, symbol, hold, earning, transactionTime);
+
+        await ctx.service.stock.updateUserStock({ uid, symbol, hold, earning, transactionTime });
+      }
+
+    } else {
+
+      success = price < currentPrice ? 0 : 1;
+      taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
+      userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
+
+      if (userStockInfo[0].hold < count) {
+        ctx.helper.error({ ctx, error: 110, msg: '持仓数量不足，无法交易' });
+        return;
+      }
+
+      earning = price * count - taxes - userStockInfo[0].earning;
+
+      if (success && count < userStockInfo[0].hold) {
+
+        const hold = userStockInfo[0].hold - count;
+        earning = userStockInfo[0].earning + earning;
+
+        await ctx.service.stock.updateUserStock({ uid, symbol, hold, earning, transactionTime });
+
+      } else if (success && count === userStockInfo[0].hold) {
+        await ctx.service.stock.removeUserStocks({ uid, symbol });
+      }
+
+    }
 
     // 存储交易记录
     const action = await ctx.service.transaction.action({ uid, sid, sname: name, action: TransactionType.buy, count, price, success, totalFund, earning, mock: 0, transactionTime });
 
     // 委托和成交，都要改变用户当前的资金。
     await ctx.service.funds.changeUserFund(uid, userFundNow);
-
-    // 成交还需要改变用户所持股票
-    if (success) {
-      await ctx.service.stock.changeUserStocks({ uid, symbol, name, held: count, transactionTime });
-    }
 
     ctx.helper.success({ ctx, res: action });
   }
@@ -124,10 +161,20 @@ class TransactionController extends Controller {
 
   async getUserTransaction() {
     const { ctx } = this;
+    console.log('==========> getUserTransaction:', ctx.params, ctx.query);
     const uid = ctx.params.uid;
     ctx.validate({ uid: MongoObjectIdSchema }, ctx.params);
 
-    const res = await ctx.service.transaction.getTransactionByUid({ uid });
+    const params = {};
+
+    params.uid = uid;
+
+    if (ctx.query.hasOwnProperty('starttime') && ctx.query.hasOwnProperty('endtime')) {
+      params.starttime = ctx.query.starttime;
+      params.endtime = ctx.query.endtime;
+    }
+
+    const res = await ctx.service.transaction.getTransactionByUid(params);
     ctx.helper.success({ ctx, res });
   }
 }
