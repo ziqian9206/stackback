@@ -15,7 +15,14 @@ class UserService extends Service {
 
   login({ account, password }) {
     const query = { account, password };
-    return this.ctx.model.User.findOne(query).exec();
+
+    return this.ctx.model.User.findOne(query).exec(function (err, user) {
+      console.log('exec:', err, user)
+      // user.comparePassword(password, function (err, isMatch) {
+      //   if (err) throw err;
+      //   console.log('comparePassword:', password, isMatch)
+      // });
+    });
   }
 
   getUserInfo(uid) {
