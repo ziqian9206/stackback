@@ -37,15 +37,37 @@ class TransactionService extends Service {
   }
 
   getTransactionByUid(params) {
-    return this.ctx.model.Transaction.find({ uid: params.uid, success: 1, time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() } });
+    return this.ctx.model.Transaction.find({ 
+      uid: params.uid, 
+      success: 1, 
+      time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() }
+    }).exec();
   }
 
+  /**
+   * 通过uid查询用户持有的股票
+   * @param {Object} params {uid}
+   * @return {Promise} 查询返回的 Promise 对象
+   */
   getUserHoldByUid({ uid }) {
-    return this.ctx.model.Transaction.find({ uid, success: 1, action: 1 });
+    return this.ctx.model.Transaction.find({ 
+      uid, 
+      success: 1, 
+      action: 1 
+    }).exec();
   }
 
+  /**
+   * 通过uid查询用户委托的股票
+   * @param {Object} params {用户ID，时间}
+   * @return {Promise} 查询返回的 Promise 对象
+   */
   getUserCommissionByUid(params) {
-    return this.ctx.model.Transaction.find({ uid: params.uid, success: 0, time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() } });
+    return this.ctx.model.Transaction.find({ 
+      uid: params.uid, 
+      success: 0, 
+      time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() }
+    }).exec();
   }
 }
 
