@@ -6,11 +6,18 @@ const Service = require('egg').Service;
 class StockService extends Service {
   // 获取用户持股
   getUserStocks(uid) {
-    return this.ctx.model.Stock.find({ uid });
+    return this.ctx.model.Stock.find({ uid }).exec();
+  }
+
+  getUserStocksById(uid, sid) {
+    if (sid) {
+      return this.ctx.model.Stock.find({ uid, sid }).exec();
+    }
+    return this.ctx.model.Stock.find({ uid }).exec();
   }
 
   getUserStockById({ uid, sid }) {
-    return this.ctx.model.Stock.find({ uid, sid });
+    return this.ctx.model.Stock.find({ uid, sid }).exec();
   }
 
   getStockInfo(sid) {
@@ -33,11 +40,13 @@ class StockService extends Service {
 
   updateUserStock({ uid, symbol, hold, earning, transactionTime }) {
     console.log('updateUserStock:', uid, symbol, hold, earning, transactionTime);
-    return this.ctx.model.Stock.updateOne({ uid, symbol, hold, earning, transactionTime });
+    const query = { uid, sid: symbol };
+    const update = { $set: { hold, earning, transactionTime } };
+    return this.ctx.model.Stock.findOneAndUpdate(query, update).exec();
   }
 
   removeUserStock({ uid, symbol }) {
-    return this.ctx.model.Stock.remove({ uid, symbol });
+    return this.ctx.model.Stock.remove({ uid, symbol }).exec();
   }
 }
 
