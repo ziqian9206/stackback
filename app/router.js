@@ -27,6 +27,9 @@ module.exports = app => {
   // 当前委托
   router.get('/v1/stock/commission/:uid', controller.stock.commission);
 
+  // 撤销委托
+  router.get('/v1/stock/commission/revoke/:id', controller.stock.revokeCommission);
+
   // 股票买入
   router.post('/v1/transaction/buy', controller.transaction.buy);
 
