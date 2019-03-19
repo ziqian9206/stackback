@@ -15,6 +15,7 @@ class HomeController extends Controller {
     const sid = ctx.params.sid;
     if (!sid) {
       ctx.helper.error({ ctx, msg: 'sid不能为空' });
+      return;
     }
     console.log('>>>>>>', sid);
     const stockInfo = await ctx.service.stock.getStockInfo(sid);
@@ -37,11 +38,17 @@ class HomeController extends Controller {
   async hold() {
     const { ctx } = this;
     const uid = ctx.params.uid;
+    const sid = ctx.query.sid;
     if (!uid) {
       ctx.helper.error({ ctx, msg: 'uid不能为空' });
     }
 
-    const res = await ctx.service.transaction.getUserHoldByUid({ uid });
+    // const res = await ctx.service.transaction.getUserHoldByUid({ uid });
+    const res = await ctx.service.stock.getUserStocksById(uid, sid);
+    if (sid) {
+      ctx.helper.success({ ctx, res: res[0] });
+      return;
+    }
     ctx.helper.success({ ctx, res });
   }
 
@@ -52,6 +59,7 @@ class HomeController extends Controller {
     const uid = ctx.params.uid;
     if (!uid) {
       ctx.helper.error({ ctx, msg: 'uid不能为空' });
+      return;
     }
     ctx.validate({ uid: MongoObjectIdSchema }, ctx.params);
 
@@ -65,6 +73,19 @@ class HomeController extends Controller {
     }
 
     const res = await ctx.service.transaction.getUserCommissionByUid(params);
+    ctx.helper.success({ ctx, res });
+  }
+
+  async revokeCommission() {
+    const { ctx } = this;
+    console.log('==========> revokeCommission:', ctx.params, ctx.query);
+    const _id = ctx.params.id;
+    if (!_id) {
+      ctx.helper.error({ ctx, msg: 'id不能为空' });
+      return;
+    }
+
+    const res = await ctx.service.transaction.revokeCommissionById(_id);
     ctx.helper.success({ ctx, res });
   }
 }
