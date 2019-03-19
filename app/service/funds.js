@@ -12,7 +12,7 @@ class FundsService extends Service {
   }
 
   getUserFund(uid) {
-    return this.ctx.model.Funds.findOne({ uid });
+    return this.ctx.model.Funds.findOne({ uid }).exec();
   }
 
   changeUserFund(uid, currentValue) {
