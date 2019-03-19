@@ -15,11 +15,11 @@ class UserService extends Service {
 
   login({ account, password }) {
     const user = { account, password };
-    return this.ctx.model.User.findOne(user);
+    return this.ctx.model.User.findOne(user).exec();
   }
 
   getUserInfo(uid) {
-    return this.ctx.model.User.findOne({ _id: uid });
+    return this.ctx.model.User.findOne({ _id: uid }).exec();
   }
 }
 
