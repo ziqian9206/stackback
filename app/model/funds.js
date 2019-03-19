@@ -12,5 +12,5 @@ module.exports = app => {
     currentValue: { type: Number, default: 100000 },
   });
 
-  return mongoose.model('user-funds', FundSchema);
+  return mongoose.model('user-fund', FundSchema);
 };
