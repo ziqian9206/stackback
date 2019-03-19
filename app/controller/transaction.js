@@ -38,6 +38,7 @@ class TransactionController extends Controller {
 
   async buy() {
     const { ctx } = this;
+    console.log('==========> buy:', ctx.params, ctx.query);
     const { body } = ctx.request;
     ctx.validate(TransactionRules, body);
 
@@ -63,8 +64,10 @@ class TransactionController extends Controller {
     const totalFund = price * count; // 成交总金额
     let earning = 0;
     const transactionTime = Date.now();
+    let action = null;
 
     if (type === 1) {
+      action = TransactionType.buy;
       success = currentPrice > price ? 0 : 1;
       taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
@@ -85,14 +88,14 @@ class TransactionController extends Controller {
         const hold = userStockInfo[0].hold + count;
         earning = userStockInfo[0].earning + earning;
 
-        console.log('updateUserStock=>', uid, symbol, hold, earning, transactionTime);
+        console.log('mairu: updateUserStock=>', uid, symbol, hold, earning, transactionTime);
 
         await ctx.service.stock.updateUserStock({ uid, symbol, hold, earning, transactionTime });
       }
 
     } else {
-
-      success = price < currentPrice ? 0 : 1;
+      action = TransactionType.sell;
+      success = price < currentPrice ? 1 : 0;
       taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
 
@@ -102,9 +105,7 @@ class TransactionController extends Controller {
       }
 
       earning = price * count - taxes - userStockInfo[0].earning;
-
       if (success && count < userStockInfo[0].hold) {
-
         const hold = userStockInfo[0].hold - count;
         earning = userStockInfo[0].earning + earning;
 
@@ -117,12 +118,11 @@ class TransactionController extends Controller {
     }
 
     // 存储交易记录
-    const action = await ctx.service.transaction.action({ uid, sid, sname: name, action: TransactionType.buy, count, price, success, totalFund, earning, mock: 0, transactionTime });
+    const res = await ctx.service.transaction.action({ uid, sid, sname: name, action, count, price, success, totalFund, earning, mock: 0, transactionTime });
 
     // 委托和成交，都要改变用户当前的资金。
     await ctx.service.funds.changeUserFund(uid, userFundNow);
-
-    ctx.helper.success({ ctx, res: action });
+    ctx.helper.success({ ctx, res });
   }
 
   async sell() {
