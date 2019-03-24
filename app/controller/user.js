@@ -21,6 +21,14 @@ class UserController extends Controller {
 
     // 储存新注册用户
     const { account, password } = body;
+
+    const existUser = await ctx.service.user.existUser(account);
+
+    if (existUser) {
+      ctx.helper.error({ ctx, error: 103, msg: '该用户已存在，请勿重复注册' });
+      return;
+    }
+
     const user = await ctx.service.user.newUser({ account, password });
     await ctx.service.funds.setting(user._id);
     ctx.helper.success({ ctx,
@@ -45,6 +53,7 @@ class UserController extends Controller {
     // 获取用户账户
     const { account, password } = ctx.query;
     const user = await ctx.service.user.login({ account, password });
+    console.log('....>', user);
     if (user) {
       ctx.helper.success({
         ctx,
