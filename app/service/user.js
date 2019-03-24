@@ -13,20 +13,25 @@ class UserService extends Service {
     return user.save();
   }
 
-  login({ account, password }) {
-    const query = { account, password };
+  async existUser(account) {
+    const query = { account };
+    return this.ctx.model.User.findOne(query).exec();
+  }
 
-    return this.ctx.model.User.findOne(query).exec(function (err, user) {
-      console.log('exec:', err, user)
-      // user.comparePassword(password, function (err, isMatch) {
-      //   if (err) throw err;
-      //   console.log('comparePassword:', password, isMatch)
-      // });
-    });
+  async login({ account, password }) {
+    const query = { account };
+
+    const user = await this.ctx.model.User.findOne(query).exec();
+
+    if (await user.comparePassword(password)) {
+      return user;
+    }
+
+    return null;
   }
 
   getUserInfo(uid) {
-    const query = { _id: uid }
+    const query = { _id: uid };
     return this.ctx.model.User.findOne(query).exec();
   }
 }
