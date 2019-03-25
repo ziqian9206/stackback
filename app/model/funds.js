@@ -12,5 +12,7 @@ module.exports = app => {
     currentValue: { type: Number, default: 100000 },
   });
 
+  FundSchema.index({ uid: 1 }); //1表示升序索引，-1表示降序索引
+
   return mongoose.model('user-funds', FundSchema);
 };

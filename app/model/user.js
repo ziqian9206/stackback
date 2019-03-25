@@ -13,6 +13,8 @@ module.exports = app => {
     password: { type: String },
   });
 
+  UserSchema.index({ account: 1 }); //1表示升序索引，-1表示降序索引
+
   UserSchema.pre('save', function(next) {
     const user = this;
     bcrypt.genSalt(SALT_WORK_FACTOR, function(err, salt) {
