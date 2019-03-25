@@ -27,11 +27,8 @@ module.exports = app => {
   // 当前委托
   router.get('/v1/stock/commission/:uid', controller.stock.commission);
 
-  // 股票买入
+  // 股票买入/卖出
   router.post('/v1/transaction/buy', controller.transaction.buy);
-
-  // 股票卖出
-  router.post('/v1/transaction/sell', controller.transaction.sell);
 
   // 新增交易记录
   router.post('/v1/transaction/record', controller.transaction.record);
