@@ -15,5 +15,5 @@ module.exports = app => {
     transactionTime: { type: Number },
   });
 
-  return mongoose.model('user-stock', StockSchema);
+  return mongoose.model('stock', StockSchema);
 };

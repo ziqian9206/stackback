@@ -20,5 +20,5 @@ module.exports = app => {
     time: { type: Number },
   });
 
-  return mongoose.model('user-transaction', TransactionSchema);
+  return mongoose.model('transaction', TransactionSchema);
 };

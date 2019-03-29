@@ -34,5 +34,5 @@ module.exports = app => {
     return await bcrypt.compare(candidatePassword, this.password);
   };
 
-  return mongoose.model('user-account', UserSchema);
+  return mongoose.model('account', UserSchema);
 };
