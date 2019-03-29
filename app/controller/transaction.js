@@ -25,7 +25,6 @@ const RecordRules = {
   price: { type: 'number' }, // 成交的单价
   totalFund: { type: 'number' }, // 成交的总金额
   earning: { type: 'number' }, // 盈亏金额
-  // rate: { type: 'number' }, // 收益率
   time: { type: 'number' }, // 交易时间
 };
 
@@ -50,7 +49,7 @@ class TransactionController extends Controller {
     // TODO：首先判断要购买的股数是否超过了可购买的股数
 
     const stockInfoGBK = iconv.decode(stockInfo.data, 'gbk').split(',');
-    const symbol = stockInfoGBK[0].match(/(sh|sz)\d+/g)[0]; // 0: 股票代码
+    // const symbol = stockInfoGBK[0].match(/(sh|sz)\d+/g)[0]; // 0: 股票代码
     const name = stockInfoGBK[0].match(/[\u4E00-\u9FA5]+/g)[0]; // 0: 股票名字
     const currentPrice = Number(stockInfoGBK[3]); // [3]当前价格
 
@@ -82,15 +81,13 @@ class TransactionController extends Controller {
 
       // 成交还需要改变用户所持股票
       if (success && userStockInfo.length === 0) {
-        await ctx.service.stock.changeUserStocks({ type, uid, symbol, name, hold: count, earning, transactionTime });
+        await ctx.service.stock.changeUserStocks({ type, uid, sid, name, hold: count, earning, transactionTime });
       } else if (success && userStockInfo.length > 0) {
 
         const hold = userStockInfo[0].hold + count;
         earning = userStockInfo[0].earning + earning;
 
-        console.log('mairu: updateUserStock=>', uid, symbol, hold, earning, transactionTime);
-
-        await ctx.service.stock.updateUserStock({ uid, symbol, hold, earning, transactionTime });
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime });
       }
 
     } else {
@@ -109,10 +106,10 @@ class TransactionController extends Controller {
         const hold = userStockInfo[0].hold - count;
         earning = userStockInfo[0].earning + earning;
 
-        await ctx.service.stock.updateUserStock({ uid, symbol, hold, earning, transactionTime });
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime });
 
       } else if (success && count === userStockInfo[0].hold) {
-        await ctx.service.stock.removeUserStocks({ uid, symbol });
+        await ctx.service.stock.removeUserStocks({ uid, sid });
       }
 
     }
@@ -125,37 +122,82 @@ class TransactionController extends Controller {
     ctx.helper.success({ ctx, res });
   }
 
-  async sell() {
-    const { ctx } = this;
-    const { body } = ctx.request;
-    ctx.validate(TransactionRules, body);
-
-    const { uid, sid, count, price } = body;
-    // TODO：首先判断要购买的股数是否超过了可购买的股数
-
-    // TODO：判断用户资金是否可以买入当前的数量
-
-    // 用户当前的交易是委托还是直接完成 success： 0： 委托， 1: 完成
-    const stockInfo = await ctx.service.stock.getStockInfo(sid);
-    const stockInfoGBK = iconv.decode(stockInfo.data, 'gbk').split(',');
-    const currentPrice = Number(stockInfoGBK[3]); // [3]当前价格
-
-    // 如果当前股票的实时价格高于用户的售价，则立刻成交。否则委托。
-    const success = currentPrice > price ? 1 : 0;
-
-    // 判断买入交易是委托还是立刻执行
-    const action = await ctx.service.transaction.action({ action: TransactionType.sell, uid, sid, count, price, success });
-    ctx.helper.success({ ctx, res: action });
-  }
-
   async record() {
     const { ctx } = this;
     const { body } = ctx.request;
-    ctx.validate(RecordRules, body);
-    const { uid, sid, sname, action, count, price, totalFund, earning, time } = body;
 
+    console.log('>>>>>>>>>>', 'record:')
+    try {
+      ctx.validate(RecordRules, body);
+    } catch (err) {
+      ctx.helper.error({ ctx, error: 115, msg: err });
+    }
+    
+    let { uid, sid, sname, action, count, price, totalFund, earning, time } = body;
+    uid = uid.trim();
+    sid = sid.trim();
+    sname = sname.trim();
+    action = parseInt(action, 10);
+    count = parseInt(count, 10);
+    price = parseFloat(price, 10);
+    totalFund = parseFloat(totalFund, 10);
+    earning = parseFloat(earning, 10);
+    console.log('record, params:', uid, sid, sname, action, count, price, totalFund, earning, time)
     const mock = 1;
+    // 写入交易记录
     const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, success: 1, totalFund, earning, mock, time });
+    const userStockInfo = await ctx.service.stock.getUserStockById({ uid, sid });
+
+    let taxes = null;
+    let userFundNow = null;
+    const userFund = await ctx.service.funds.getUserFund(uid);
+    
+    if (action) {
+      // 买入修改资金逻辑
+      taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
+      userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
+
+      // 成交还需要改变用户所持股票
+      console.log('userStockInfo.length:', userStockInfo.length)
+      if (userStockInfo.length === 0) {
+        await ctx.service.stock.changeUserStocks({ type: action, uid, sid, name:sname, hold: count, earning, transactionTime: time });
+      } else if (userStockInfo.length > 0) {
+        console.log(userStockInfo[0].hold, count, userStockInfo[0].earning, earning)
+        const hold = userStockInfo[0].hold + count;
+        earning = userStockInfo[0].earning + earning;
+
+        console.log('updateUserStock=++>', uid, sid, hold, earning, time);
+
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime: time });
+      }
+
+    } else {
+      // 卖出修改资金逻辑
+      taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
+      userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
+
+      if (userStockInfo.length === 0) {
+        ctx.helper.error({ ctx, error: 155, msg: '没有这只股票，无法卖出' });
+        return
+      }
+
+      earning = price * count - taxes - userStockInfo[0].earning;
+      if (count < userStockInfo[0].hold) {
+
+        const hold = userStockInfo[0].hold - count;
+        earning = userStockInfo[0].earning + earning;
+
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime: time });
+
+      } else {
+        await ctx.service.stock.removeUserStocks({ uid, sid });
+      }
+
+    }
+    
+    // 改变用户当前的资金。
+    await ctx.service.funds.changeUserFund(uid, userFundNow);
+
     ctx.helper.success({ ctx, res });
   }
 

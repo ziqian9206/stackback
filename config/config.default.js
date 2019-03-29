@@ -42,6 +42,7 @@ module.exports = appInfo => {
       server: { poolSize: 20 },
       reconnectTries: 10,
       reconnectInterval: 500,
+      keepAlive: 120, // 对于长期运行的后台应用，启用毫秒级 keepAlive 是一个精明的操作。不这么做你可能会经常 收到看似毫无原因的 "connection closed" 错误。
     },
   };
 

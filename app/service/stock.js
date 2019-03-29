@@ -24,29 +24,29 @@ class StockService extends Service {
     return this.ctx.curl(`http://hq.sinajs.cn/list=${sid}`);
   }
 
-  changeUserStocks({ type, uid, symbol, name, hold, earning, transactionTime }) {
+  changeUserStocks({ type, uid, sid, name, hold, earning, transactionTime }) {
     const stock = this.ctx.model.Stock();
     if (type === 1) {
       stock.uid = uid;
-      stock.sid = symbol;
+      stock.sid = sid;
       stock.name = name;
       stock.hold = hold;
       stock.earning = earning;
       stock.transactionTime = transactionTime;
-      console.log('changeUserStocks:::::>', uid, symbol, name, typeof hold, transactionTime, stock);
+      console.log('changeUserStocks:::::>', uid, sid, name, typeof hold, transactionTime, stock);
       return stock.save();
     }
   }
 
-  updateUserStock({ uid, symbol, hold, earning, transactionTime }) {
-    console.log('updateUserStock:', uid, symbol, hold, earning, transactionTime);
-    const query = { uid, sid: symbol };
-    const update = { $set: { hold, earning, transactionTime } };
+  updateUserStock({ uid, sid, hold, earning, transactionTime }) {
+    console.log('updateUserStock:', uid, sid, hold, earning, transactionTime);
+    const query = {uid, sid};
+    const update = { $set: { hold, earning, transactionTime }};
     return this.ctx.model.Stock.findOneAndUpdate(query, update).exec();
   }
 
-  removeUserStock({ uid, symbol }) {
-    return this.ctx.model.Stock.remove({ uid, symbol }).exec();
+  removeUserStock({ uid, sid }) {
+    return this.ctx.model.Stock.remove({ uid, sid }).exec();
   }
 }
 

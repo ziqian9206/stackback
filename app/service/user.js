@@ -18,8 +18,26 @@ class UserService extends Service {
     return this.ctx.model.User.findOne(user).exec();
   }
 
+  async existUser(account) {
+    const query = { account };
+    return this.ctx.model.User.findOne(query).exec();
+  }
+
+  async login({ account, password }) {
+    const query = { account };
+
+    const user = await this.ctx.model.User.findOne(query).exec();
+
+    if (await user.comparePassword(password)) {
+      return user;
+    }
+
+    return null;
+  }
+
   getUserInfo(uid) {
-    return this.ctx.model.User.findOne({ _id: uid }).exec();
+    const query = { _id: uid };
+    return this.ctx.model.User.findOne(query).exec();
   }
 }
 
