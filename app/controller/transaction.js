@@ -146,7 +146,6 @@ class TransactionController extends Controller {
     const mock = 1;
     // 写入交易记录
     const res = await ctx.service.transaction.record({ uid, sid, sname, action, count, price, success: 1, totalFund, earning, mock, time });
-    const userStockInfo = await ctx.service.stock.getUserStockById({ uid, sid });
 
     let taxes = null;
     let userFundNow = null;
@@ -156,43 +155,10 @@ class TransactionController extends Controller {
       // 买入修改资金逻辑
       taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
-
-      // 成交还需要改变用户所持股票
-      console.log('userStockInfo.length:', userStockInfo.length)
-      if (userStockInfo.length === 0) {
-        await ctx.service.stock.changeUserStocks({ type: action, uid, sid, name:sname, hold: count, earning, transactionTime: time });
-      } else if (userStockInfo.length > 0) {
-        console.log(userStockInfo[0].hold, count, userStockInfo[0].earning, earning)
-        const hold = userStockInfo[0].hold + count;
-        earning = userStockInfo[0].earning + earning;
-
-        console.log('updateUserStock=++>', uid, sid, hold, earning, time);
-
-        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime: time });
-      }
-
     } else {
       // 卖出修改资金逻辑
       taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
-
-      if (userStockInfo.length === 0) {
-        ctx.helper.error({ ctx, error: 155, msg: '没有这只股票，无法卖出' });
-        return
-      }
-
-      earning = price * count - taxes - userStockInfo[0].earning;
-      if (count < userStockInfo[0].hold) {
-
-        const hold = userStockInfo[0].hold - count;
-        earning = userStockInfo[0].earning + earning;
-
-        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime: time });
-
-      } else {
-        await ctx.service.stock.removeUserStocks({ uid, sid });
-      }
-
     }
     
     // 改变用户当前的资金。
