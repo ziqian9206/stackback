@@ -41,7 +41,7 @@ class TransactionService extends Service {
       uid: params.uid,
       success: 1,
       time: { $gte: params.starttime || 0, $lte: params.endtime || Date.now() },
-    }).exec();
+    }).sort({time: -1}).exec();
   }
 
   /**
