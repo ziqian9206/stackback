@@ -39,6 +39,18 @@ class UserService extends Service {
     const query = { _id: uid };
     return this.ctx.model.User.findOne(query).exec();
   }
+
+  admin({ account, admin }) {
+    const query = { account };
+    const update = { $set: { admin } };
+    // return this.ctx.model.User.findOneAndUpdate(query, update).exec();
+    console.log('query:', query, 'update:', update);
+    return this.ctx.model.User.findOneAndUpdate(query, update).exec();
+  }
+
+  findAdmin() {
+    return this.ctx.model.User.find({ admin: 1 });
+  }
 }
 
 module.exports = UserService;
