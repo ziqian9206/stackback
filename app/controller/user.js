@@ -1,6 +1,7 @@
 'use strict';
 
 const Controller = require('egg').Controller;
+const uuidv4 = require('uuid/v4');
 
 const MongoObjectIdSchema = {
   type: 'string',
@@ -29,8 +30,8 @@ class UserController extends Controller {
       return;
     }
 
-    const user = await ctx.service.user.newUser({ account, password });
-    await ctx.service.funds.setting(user._id);
+    const user = await this.saveUserInDB({ account, password });
+
     ctx.helper.success({ ctx,
       res: {
         uid: user._id,
@@ -38,6 +39,13 @@ class UserController extends Controller {
         password: user.password,
       },
     });
+  }
+
+  async saveUserInDB({ account, password }) {
+    const { ctx } = this;
+    const user = await ctx.service.user.newUser({ account, password });
+    await ctx.service.funds.setting(user._id);
+    return user;
   }
 
   // 登录
@@ -53,11 +61,18 @@ class UserController extends Controller {
     // 获取用户账户
     const { account, password } = ctx.query;
     const user = await ctx.service.user.login({ account, password });
+    const admin = await ctx.service.user.findAdmin();
+    let adminArray = [];
+    if (admin) {
+      admin.forEach(item => {
+        adminArray.push(item._id);
+      });
+    }
     console.log('....>', user);
     if (user) {
       ctx.helper.success({
         ctx,
-        res: { uid: user._id, account: user.account },
+        res: { uid: user._id, account: user.account, admin: adminArray },
       });
     } else {
       ctx.helper.error({ ctx, error: 102, msg: '账户或者密码不正确' });
@@ -86,6 +101,39 @@ class UserController extends Controller {
       stocks,
     };
     ctx.helper.success({ ctx, res: response });
+  }
+
+  // 生成用户
+  async generator() {
+    const { ctx } = this;
+
+    const account = uuidv4();
+    const password = uuidv4();
+
+    const user = await this.saveUserInDB({ account, password });
+
+    ctx.helper.success({ ctx,
+      res: {
+        uid: user._id,
+        account: user.account,
+        password: password,
+      },
+    });
+  }
+
+  async admin() {
+    const { ctx } = this;
+    const query = ctx.query;
+    const account = query.account;
+    const admin = parseInt(query.admin, 10);
+    
+    console.log('query:', account, admin);
+
+    const user = await this.service.user.admin({ account, admin });
+
+    ctx.helper.success({ ctx,
+      res: { uid: user._id, account: user.account, admin: user.admin },
+    });
   }
 
 }
