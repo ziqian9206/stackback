@@ -12,6 +12,12 @@ module.exports = app => {
   // 注册用户
   router.post('/v1/register', controller.user.register);
 
+  // 生成用户
+  router.get('/v1/user/generator', controller.user.generator);
+
+  // 设置用户是否为管理员
+  router.get('/v1/user/admin', controller.user.admin);
+
   // 用户登录
   router.get('/v1/login', controller.user.login);
 
