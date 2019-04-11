@@ -104,9 +104,9 @@ class TransactionController extends Controller {
       earning = price * count - taxes - userStockInfo[0].earning;
       if (success && count < userStockInfo[0].hold) {
         const hold = userStockInfo[0].hold - count;
-        earning = userStockInfo[0].earning + earning;
+        const totalEarning = userStockInfo[0].earning + earning;
 
-        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime });
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning: totalEarning, transactionTime });
 
       } else if (success && count === userStockInfo[0].hold) {
         await ctx.service.stock.removeUserStocks({ uid, sid });
