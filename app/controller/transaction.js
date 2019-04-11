@@ -85,9 +85,9 @@ class TransactionController extends Controller {
       } else if (success && userStockInfo.length > 0) {
 
         const hold = userStockInfo[0].hold + count;
-        earning = userStockInfo[0].earning + earning;
+        const totalEarning = userStockInfo[0].earning + earning;
 
-        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning, transactionTime });
+        await ctx.service.stock.updateUserStock({ uid, sid, hold, earning: totalEarning, transactionTime });
       }
 
     } else {
@@ -101,10 +101,10 @@ class TransactionController extends Controller {
         return;
       }
 
-      earning = price * count - taxes - userStockInfo[0].earning;
+      earning = price * count - taxes;
       if (success && count < userStockInfo[0].hold) {
         const hold = userStockInfo[0].hold - count;
-        const totalEarning = userStockInfo[0].earning + earning;
+        const totalEarning = userStockInfo[0].earning - earning;
 
         await ctx.service.stock.updateUserStock({ uid, sid, hold, earning: totalEarning, transactionTime });
 
