@@ -10,6 +10,7 @@
     "bcrypt": "^3.0.4",
     "egg": "^2.15.1",
     "egg-cors": "^2.1.2",
+    "egg-logger": "^2.4.1",
     "egg-mongoose": "^3.1.1",
     "egg-scripts": "^2.11.0",
     "egg-validate": "^2.0.2",
