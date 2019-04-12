@@ -38,6 +38,7 @@ class TransactionController extends Controller {
   async buy() {
     const { ctx } = this;
     console.log('==========> buy:', ctx.params, ctx.query);
+    ctx.logger.info('request body: %j', ctx.request.body);
     const { body } = ctx.request;
     ctx.validate(TransactionRules, body);
 
