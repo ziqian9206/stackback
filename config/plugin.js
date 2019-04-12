@@ -18,3 +18,8 @@ exports.cors = {
   enable: true,
   package: 'egg-cors',
 };
+
+exports.logger = {
+  enable: true,
+  level: 'info',
+};
