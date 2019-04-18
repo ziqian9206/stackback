@@ -48,7 +48,7 @@ class TransactionController extends Controller {
     ctx.logger.info('userFund: %j', userFund);
 
     const stockInfo = await ctx.service.stock.getStockInfo(sid);
-    ctx.logger.info('stockInfo: %j', stockInfo);
+    // ctx.logger.info('stockInfo: %j', stockInfo);
 
     const userStockInfo = await ctx.service.stock.getUserStockById({ uid, sid });
     ctx.logger.info('userStockInfo: %j', userStockInfo);
@@ -137,6 +137,8 @@ class TransactionController extends Controller {
     // 委托和成交，都要改变用户当前的资金。
     ctx.logger.info('委托和成交，都要改变用户当前的资金：', `uid: ${uid}, userFundNow: ${userFundNow}`)
     await ctx.service.funds.changeUserFund(uid, userFundNow);
+
+    ctx.logger.info('返回：', res);
     ctx.helper.success({ ctx, res });
   }
 
