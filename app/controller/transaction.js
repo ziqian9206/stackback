@@ -41,11 +41,17 @@ class TransactionController extends Controller {
     ctx.logger.info('request body: %j', ctx.request.body);
     const { body } = ctx.request;
     ctx.validate(TransactionRules, body);
+    ctx.logger.info('request validate pass');
 
     const { uid, sid, count, price, type } = body;
     const userFund = await ctx.service.funds.getUserFund(uid);
+    ctx.logger.info('userFund: %j', userFund);
+
     const stockInfo = await ctx.service.stock.getStockInfo(sid);
+    ctx.logger.info('stockInfo: %j', stockInfo);
+
     const userStockInfo = await ctx.service.stock.getUserStockById({ uid, sid });
+    ctx.logger.info('userStockInfo: %j', userStockInfo);
     console.log('userStockInfo:', userStockInfo);
     // TODO：首先判断要购买的股数是否超过了可购买的股数
 
@@ -72,6 +78,7 @@ class TransactionController extends Controller {
       taxes = totalFund / 1000; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue - totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
 
+      ctx.logger.info('type 为 1: %j', `action: ${action}, success: ${success}, taxes: ${taxes}, userFundNow: ${userFundNow}`);
       // 判断用户资金是否可以买入当前的数量
       if (userFundNow < 0) {
         ctx.helper.error({ ctx, error: 110, msg: '资金不足，无法购买' });
@@ -82,12 +89,14 @@ class TransactionController extends Controller {
 
       // 成交还需要改变用户所持股票
       if (success && userStockInfo.length === 0) {
+        ctx.logger.info('成交 | 用户已经持有该股 -> 改变用户所持股票', `uid: ${uid}, sid: ${sid}, hold: ${hold}, totalEarning: ${totalEarning}`)
         await ctx.service.stock.changeUserStocks({ type, uid, sid, name, hold: count, earning, transactionTime });
       } else if (success && userStockInfo.length > 0) {
 
         const hold = userStockInfo[0].hold + count;
         const totalEarning = userStockInfo[0].earning + earning;
 
+        ctx.logger.info('成交 | 用户未持有该股 -> 改变用户所持股票', `uid: ${uid}, sid: ${sid}, hold: ${hold}, totalEarning: ${totalEarning}`)
         await ctx.service.stock.updateUserStock({ uid, sid, hold, earning: totalEarning, transactionTime });
       }
 
@@ -97,7 +106,10 @@ class TransactionController extends Controller {
       taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
 
+      ctx.logger.info(`type 为 ${type}: %j`, `action: ${action}, success: ${success}, taxes: ${taxes}, userFundNow: ${userFundNow}`);
+
       if (userStockInfo[0].hold < count) {
+        ctx.logger.info('持仓数量不足，无法交易');
         ctx.helper.error({ ctx, error: 110, msg: '持仓数量不足，无法交易' });
         return;
       }
@@ -107,18 +119,23 @@ class TransactionController extends Controller {
         const hold = userStockInfo[0].hold - count;
         const totalEarning = userStockInfo[0].earning - earning;
 
+        ctx.logger.info('持仓数量满足交易', `hold: ${hold}, totalEarning: ${totalEarning}`);
         await ctx.service.stock.updateUserStock({ uid, sid, hold, earning: totalEarning, transactionTime });
 
       } else if (success && count === userStockInfo[0].hold) {
+
+        ctx.logger.info('持仓清空')
         await ctx.service.stock.removeUserStocks({ uid, sid });
       }
 
     }
 
     // 存储交易记录
+    ctx.logger.info('存储交易记录：', `uid: ${uid}, sid: ${sid}, sname: ${name}, action: ${action}, count: ${count}, price: ${price}, success: ${success}, totalFund: ${totalFund}, mock: 0`)
     const res = await ctx.service.transaction.action({ uid, sid, sname: name, action, count, price, success, totalFund, earning, mock: 0, transactionTime });
 
     // 委托和成交，都要改变用户当前的资金。
+    ctx.logger.info('委托和成交，都要改变用户当前的资金：', `uid: ${uid}, userFundNow: ${userFundNow}`)
     await ctx.service.funds.changeUserFund(uid, userFundNow);
     ctx.helper.success({ ctx, res });
   }
