@@ -108,7 +108,7 @@ class UserController extends Controller {
     const { ctx } = this;
 
     const account = uuidv4();
-    const password = uuidv4();
+    const password = '123456';
 
     const user = await this.saveUserInDB({ account, password });
 
