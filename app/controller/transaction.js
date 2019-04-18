@@ -89,7 +89,7 @@ class TransactionController extends Controller {
 
       // 成交还需要改变用户所持股票
       if (success && userStockInfo.length === 0) {
-        ctx.logger.info('成交 | 用户已经持有该股 -> 改变用户所持股票', `uid: ${uid}, sid: ${sid}, hold: ${hold}, totalEarning: ${totalEarning}`)
+        ctx.logger.info('成交 | 用户已经持有该股 -> 改变用户所持股票', `uid: ${uid}, sid: ${sid}, hold: ${count}`)
         await ctx.service.stock.changeUserStocks({ type, uid, sid, name, hold: count, earning, transactionTime });
       } else if (success && userStockInfo.length > 0) {
 
@@ -102,7 +102,7 @@ class TransactionController extends Controller {
 
     } else {
       action = TransactionType.sell;
-      success = price < currentPrice ? 1 : 0;
+      success = price <= currentPrice ? 1 : 0;
       taxes = totalFund / 500; // 税费买入千分之一，卖出五百分之一
       userFundNow = userFund.currentValue + totalFund - taxes; // 用户现在的钱， 买入之前的钱 - 买入股票的总价 - 税费
 
@@ -125,7 +125,7 @@ class TransactionController extends Controller {
       } else if (success && count === userStockInfo[0].hold) {
 
         ctx.logger.info('持仓清空')
-        await ctx.service.stock.removeUserStocks({ uid, sid });
+        await ctx.service.stock.removeUserStock({ uid, sid });
       }
 
     }
@@ -203,6 +203,45 @@ class TransactionController extends Controller {
     }
 
     const res = await ctx.service.transaction.getTransactionByUid(params);
+    ctx.helper.success({ ctx, res });
+  }
+
+  async removeUserTransaction() {
+    const uid = ctx.params.uid;
+    const { id } = ctx.request;
+    if (!id) {
+      ctx.helper.error({ ctx, msg: 'id不能为空' });
+      return;
+    }
+
+    if (!uid) {
+      ctx.helper.error({ ctx, msg: 'uid不能为空' });
+      return;
+    }
+
+    const transactionEvent = await ctx.service.transaction.getTransactionById(); // 交易快照
+    const userStocks = await ctx.service.stock.getUserStockById({uid, sid: transactionEvent.sid}); // 用户该股持仓
+    const userFund = await ctx.service.funds.getUserFund({uid}); // 用户资金
+
+    if (transactionEvent.action === 1) {
+      // 撤销买入： 账户加钱，持仓减少 
+      // 完成未测试
+      const earning = transactionEvent.earning;
+      const currentValue = userFund.currentValue - earning; // 因为earing为负，所以为减法
+      const hold = userStocks.hold - transactionEvent.count;
+      await ctx.service.funds.changeUserFund({uid, currentValue}); // 账户加钱
+      await ctx.service.stock.updateUserStock({ uid, sid: transactionEvent.sid, hold, earning, transactionTime: Date.now() }); // 持仓减少
+    } else {
+      // 撤销卖出： 账户减钱， 持仓增加
+      // 未完成
+      const earning = transactionEvent.earning;
+      const currentValue = userFund.currentValue - earning; // 因为earing为正，所以为减法
+      const hold = userStocks.hold + transactionEvent.count;
+      await ctx.service.funds.changeUserFund({uid, currentValue}); // 账户加钱
+      await ctx.service.stock.updateUserStock({ uid, sid: transactionEvent.sid, hold, earning, transactionTime: Date.now() }); // 持仓减少
+    }
+
+    const res = await ctx.service.transaction.removeUserTransaction(id);
     ctx.helper.success({ ctx, res });
   }
 }
