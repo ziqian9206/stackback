@@ -74,6 +74,14 @@ class TransactionService extends Service {
     // return this.ctx.model.Transaction.findByIdAndDelete({ _id: id }).exec();
     return this.ctx.model.Transaction.findByIdAndRemove({ _id: id }).exec();
   }
+
+  async getTransactionById(id) {
+    return this.ctx.model.Transaction.findById({_id: id}).exec();
+  }
+
+  async removeUserTransaction(id) {
+    return this.ctx.model.Transaction.findByIdAndRemove({ _id: id }).exec();
+  }
 }
 
 module.exports = TransactionService;
