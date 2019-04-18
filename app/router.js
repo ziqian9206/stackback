@@ -45,4 +45,7 @@ module.exports = app => {
   // 获取交易记录
   router.get('/v1/transaction/:uid', controller.transaction.getUserTransaction);
 
+  // 删除交易记录
+  // router.delete('/v1/transaction/:uid', controller.transaction.removeUserTransaction);
+
 };
