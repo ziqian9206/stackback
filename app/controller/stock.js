@@ -88,7 +88,7 @@ class HomeController extends Controller {
     // TODO: 撤销委托之前，需要返还用户交易时候的资金
     const transactionEvent = await ctx.service.transaction.getTransactionById(_id); // 交易快照
     const uid = transactionEvent.uid;
-    const userFund = await ctx.service.funds.getUserFund({uid}); // 用户资金
+    const userFund = await ctx.service.funds.getUserFund(uid); // 用户资金
     
     if (transactionEvent.action === 1) {
       // 撤销买入： 账户加钱，持仓减少 
