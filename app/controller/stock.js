@@ -85,6 +85,25 @@ class HomeController extends Controller {
       return;
     }
 
+    // TODO: 撤销委托之前，需要返还用户交易时候的资金
+    const transactionEvent = await ctx.service.transaction.getTransactionById(_id); // 交易快照
+    const uid = transactionEvent.uid;
+    const userFund = await ctx.service.funds.getUserFund({uid}); // 用户资金
+    
+    if (transactionEvent.action === 1) {
+      // 撤销买入： 账户加钱，持仓减少 
+      // 完成未测试
+      const earning = transactionEvent.earning;
+      const currentValue = userFund.currentValue - earning; // 因为earing为负，所以为减法
+      await ctx.service.funds.changeUserFund({uid, currentValue}); // 账户加钱
+    } else {
+      // 撤销卖出： 账户减钱， 持仓增加
+      // 未完成
+      const earning = transactionEvent.earning;
+      const currentValue = userFund.currentValue - earning; // 因为earing为正，所以为减法
+      await ctx.service.funds.changeUserFund({uid, currentValue}); // 账户加钱
+    }
+
     const res = await ctx.service.transaction.revokeCommissionById(_id);
     ctx.helper.success({ ctx, res });
   }
