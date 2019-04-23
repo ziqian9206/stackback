@@ -219,7 +219,7 @@ class TransactionController extends Controller {
       return;
     }
 
-    const transactionEvent = await ctx.service.transaction.getTransactionById(); // 交易快照
+    const transactionEvent = await ctx.service.transaction.getTransactionById(id); // 交易快照
     const userStocks = await ctx.service.stock.getUserStockById({uid, sid: transactionEvent.sid}); // 用户该股持仓
     const userFund = await ctx.service.funds.getUserFund({uid}); // 用户资金
 
