@@ -70,16 +70,16 @@ class TransactionService extends Service {
     }).exec();
   }
 
-  async revokeCommissionById(id) {
+  revokeCommissionById(id) {
     // return this.ctx.model.Transaction.findByIdAndDelete({ _id: id }).exec();
     return this.ctx.model.Transaction.findByIdAndRemove({ _id: id }).exec();
   }
 
-  async getTransactionById(id) {
+  getTransactionById(id) {
     return this.ctx.model.Transaction.findById({_id: id}).exec();
   }
 
-  async removeUserTransaction(id) {
+  removeUserTransaction(id) {
     return this.ctx.model.Transaction.findByIdAndRemove({ _id: id }).exec();
   }
 }
